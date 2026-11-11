@@ -18,6 +18,10 @@
 		mmc3 = &sdmmc2;
 	};
 
+	chosen: chosen {
+		stdout-path = "serial2:1500000n8";
+	};
+
 	adc-joystick {
 		compatible = "adc-joystick";
 		io-channels = <&adc_mux 0>,
@@ -34,7 +38,7 @@
 			reg = <0>;
 			abs-flat = <32>;
 			abs-fuzz = <32>;
-			abs-range = <1023 15>;
+			abs-range = <800 250>;
 			linux,code = <ABS_X>;
 		};
 
@@ -42,7 +46,7 @@
 			reg = <1>;
 			abs-flat = <32>;
 			abs-fuzz = <32>;
-			abs-range = <15 1023>;
+			abs-range = <250 800>;
 			linux,code = <ABS_RX>;
 		};
 
@@ -50,7 +54,7 @@
 			reg = <2>;
 			abs-flat = <32>;
 			abs-fuzz = <32>;
-			abs-range = <15 1023>;
+			abs-range = <250 800>;
 			linux,code = <ABS_Y>;
 		};
 
@@ -58,7 +62,7 @@
 			reg = <3>;
 			abs-flat = <32>;
 			abs-fuzz = <32>;
-			abs-range = <1023 15>;
+			abs-range = <800 250>;
 			linux,code = <ABS_RY>;
 		};
 	};
@@ -72,11 +76,44 @@
 		mux-controls = <&gpio_mux>;
 		settle-time-us = <100>;
 	};
-
 	backlight: backlight {
 		compatible = "pwm-backlight";
 		power-supply = <&vcc_sys>;
 		pwms = <&pwm4 0 25000 0>;
+		brightness-levels = <
+			  0   1   2   3   4   5   6   7
+			  8   9  10  11  12  13  14  15
+			 16  17  18  19  20  21  22  23
+			 24  25  26  27  28  29  30  31
+			 32  33  34  35  36  37  38  39
+			 40  41  42  43  44  45  46  47
+			 48  49  50  51  52  53  54  55
+			 56  57  58  59  60  61  62  63
+			 64  65  66  67  68  69  70  71
+			 72  73  74  75  76  77  78  79
+			 80  81  82  83  84  85  86  87
+			 88  89  90  91  92  93  94  95
+			 96  97  98  99 100 101 102 103
+			104 105 106 107 108 109 110 111
+			112 113 114 115 116 117 118 119
+			120 121 122 123 124 125 126 127
+			128 129 130 131 132 133 134 135
+			136 137 138 139 140 141 142 143
+			144 145 146 147 148 149 150 151
+			152 153 154 155 156 157 158 159
+			160 161 162 163 164 165 166 167
+			168 169 170 171 172 173 174 175
+			176 177 178 179 180 181 182 183
+			184 185 186 187 188 189 190 191
+			192 193 194 195 196 197 198 199
+			200 201 202 203 204 205 206 207
+			208 209 210 211 212 213 214 215
+			216 217 218 219 220 221 222 223
+			224 225 226 227 228 229 230 231
+			232 233 234 235 236 237 238 239
+			240 241 242 243 244 245 246 247
+			248 249 250 251 252 253 254 255>;
+		default-brightness-level = <77>;
 	};
 
 	battery: battery {
@@ -278,6 +315,7 @@
 	sound {
 		compatible = "simple-audio-card";
 		simple-audio-card,name = "rk817_ext";
+		simple-audio-card,aux-devs = <&spk_amp>;
 		simple-audio-card,format = "i2s";
 		simple-audio-card,mclk-fs = <256>;
 		simple-audio-card,widgets =
@@ -295,13 +333,23 @@
 		};
 	};
 
+    spk_amp: audio-amplifier {
+		compatible = "simple-audio-amplifier";
+        /* This gpio has been verified to turn off speakers on rk2023 */
+		enable-gpios = <&gpio0 RK_PA6 GPIO_ACTIVE_HIGH>;
+		pinctrl-0 = <&spk_amp_enable_h>;
+		pinctrl-names = "default";
+		sound-name-prefix = "Speaker Amp";
+		/* This is a guess based on rgxx3-series*/
+		VCC-supply = <&vcc_3v3>;
+	};
+
 	vcc3v3_lcd0_n: regulator-vcc3v3-lcd0 {
 		compatible = "regulator-fixed";
 		gpio = <&gpio0 RK_PC2 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 		pinctrl-0 = <&vcc_lcd_h>;
 		pinctrl-names = "default";
-		regulator-boot-on;
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
 		regulator-name = "vcc3v3_lcd0_n";
@@ -327,7 +375,6 @@
 		pinctrl-0 = <&vcc_wifi_h>;
 		pinctrl-names = "default";
 		regulator-always-on;
-		regulator-boot-on;
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
 		regulator-name = "vcc_wifi";
@@ -389,6 +436,8 @@
 	ddc-i2c-bus = <&i2c5>;
 	pinctrl-0 = <&hdmitxm0_cec>;
 	pinctrl-names = "default";
+	avdd-0v9-supply = <&vdda0v9_pmu>;
+	avdd-1v8-supply = <&vcca1v8_pmu>;
 	status = "okay";
 };
 
@@ -426,6 +475,7 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&i2s1m0_mclk>, <&pmic_int_l>;
 		wakeup-source;
+		system-power-controller;
 
 		vcc1-supply = <&vcc_sys>;
 		vcc2-supply = <&vcc_sys>;
@@ -525,7 +575,6 @@
 
 			vccio_acodec: LDO_REG4 {
 				regulator-always-on;
-				regulator-boot-on;
 				regulator-min-microvolt = <3300000>;
 				regulator-max-microvolt = <3300000>;
 				regulator-name = "vccio_acodec";
@@ -570,7 +619,6 @@
 
 			vcc1v8_dvp: LDO_REG8 {
 				regulator-always-on;
-				regulator-boot-on;
 				regulator-min-microvolt = <1800000>;
 				regulator-max-microvolt = <3300000>;
 				regulator-name = "vcc1v8_dvp";
@@ -592,7 +640,6 @@
 
 			dcdc_boost: BOOST {
 				regulator-always-on;
-				regulator-boot-on;
 				regulator-min-microvolt = <4700000>;
 				regulator-max-microvolt = <5400000>;
 				regulator-name = "boost";
@@ -702,10 +749,23 @@
 		};
 	};
 
+	wifi {
+		wifi_host_wake_l: wifi-host-wake-l {
+			rockchip,pins =
+				<4 RK_PA1 RK_FUNC_GPIO &pcfg_pull_down>;
+		};
+	};
+
 	vcc-wifi {
 		vcc_wifi_h: vcc-wifi-h {
 			rockchip,pins =
 				<0 RK_PA0 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
+	audio-amplifier {
+		spk_amp_enable_h: spk-amp-enable-h {
+			rockchip,pins =
+				<4 RK_PC2 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
 };
@@ -755,6 +815,7 @@
 &sdmmc1 {
 	bus-width = <4>;
 	cap-sd-highspeed;
+	card-detect-delay = <800>;
 	cd-gpios = <&gpio2 RK_PB2 GPIO_ACTIVE_LOW>;
 	disable-wp;
 	pinctrl-0 = <&sdmmc1_bus4 &sdmmc1_cmd &sdmmc1_clk &sdmmc1_det>;
@@ -766,6 +827,8 @@
 };
 
 &sdmmc2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
 	bus-width = <4>;
 	cap-sd-highspeed;
 	cap-sdio-irq;
@@ -776,7 +839,19 @@
 	pinctrl-names = "default";
 	vmmc-supply = <&vcc_wifi>;
 	vqmmc-supply = <&vcca1v8_pmu>;
+	no-mmc;
+	no-sd;
+	sd-uhs-sdr50;
 	status = "okay";
+
+	wifi@1 {
+		reg = <1>;
+		interrupt-names = "host-wake";
+		interrupt-parent = <&gpio4>;
+		interrupts = <RK_PA1 IRQ_TYPE_LEVEL_HIGH>;
+		pinctrl-0 = <&wifi_host_wake_l>;
+		pinctrl-names = "default";
+	};
 };
 
 &tsadc {
@@ -786,6 +861,7 @@
 };
 
 &uart1 {
+	dma-names = "tx", "rx";
 	pinctrl-0 = <&uart1m1_xfer &uart1m1_ctsn &uart1m1_rtsn>;
 	pinctrl-names = "default";
 	uart-has-rtscts;
@@ -797,6 +873,10 @@
 		enable-gpios = <&gpio4 3 GPIO_ACTIVE_HIGH>;
 		host-wake-gpios = <&gpio4 5 GPIO_ACTIVE_HIGH>;
 	};
+};
+
+&uart2 {
+	status = "okay";
 };
 
 &usb_host0_xhci {
