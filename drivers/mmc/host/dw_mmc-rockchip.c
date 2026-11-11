@@ -182,6 +182,8 @@ static void dw_mci_rk3288_set_ios(struct dw_mci *host, struct mmc_ios *ios)
 	struct mmc_clk_phase phase = host->phase_map.phase[ios->timing];
 	int ret, sample_phase, drv_phase;
 	unsigned int cclkin;
+	bool clkdiv = false;
+	long rate;
 	u32 bus_hz;
 
 	if (ios->clock == 0)
@@ -201,6 +203,19 @@ static void dw_mci_rk3288_set_ios(struct dw_mci *host, struct mmc_ios *ios)
 		cclkin = 2 * ios->clock * RK3288_CLKGEN_DIV;
 	else
 		cclkin = ios->clock * RK3288_CLKGEN_DIV;
+
+	/*
+	 * The CIU mux may lack a parent at cclkin (e.g. 200MHz for SDR50 on
+	 * rk3568), in which case clk_set_rate() rounds down and the card runs
+	 * at half speed. Use twice the rate and let CLKDIV divide by 2. Phases
+	 * are relative to cclkin, so the default drive phase doubles as well.
+	 */
+	rate = clk_round_rate(host->ciu_clk, cclkin);
+	if (rate > 0 && rate < cclkin &&
+	    clk_round_rate(host->ciu_clk, 2 * cclkin) == 2 * cclkin) {
+		cclkin *= 2;
+		clkdiv = true;
+	}
 
 	ret = clk_set_rate(host->ciu_clk, cclkin);
 	if (ret)
@@ -257,7 +272,7 @@ static void dw_mci_rk3288_set_ios(struct dw_mci *host, struct mmc_ios *ios)
 		 * assuming delay_o is not absurd for a given SoC.  We'll use
 		 * that as a default.
 		 */
-		drv_phase = 90;
+		drv_phase = clkdiv ? 180 : 90;
 
 		switch (ios->timing) {
 		case MMC_TIMING_MMC_DDR52:
