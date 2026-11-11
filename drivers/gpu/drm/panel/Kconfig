@@ -208,6 +208,16 @@ config DRM_PANEL_LVDS
 	  handling of power supplies or control signals. It implements automatic
 	  backlight handling if the panel is attached to a backlight controller.
 
+config DRM_PANEL_GENERIC_DSI
+	tristate "Generic MIPI DSI panel described in the device tree"
+	depends on OF
+	depends on DRM_MIPI_DSI
+	depends on BACKLIGHT_CLASS_DEVICE
+	help
+	  Drives a MIPI DSI panel whose modes and init sequence are given in
+	  the device tree's "panel_description" property (compatible
+	  "rocknix,generic-dsi"), as on the Powkiddy RGB20 Pro.
+
 config DRM_PANEL_HIMAX_HX8279
 	tristate "Himax HX8279-based panels"
 	depends on OF
