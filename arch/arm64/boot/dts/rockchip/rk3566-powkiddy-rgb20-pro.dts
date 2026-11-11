@@ -11,6 +11,24 @@
 	compatible = "powkiddy,rgb20-pro", "rockchip,rk3566";
 	model = "Powkiddy RGB20 Pro";
 
+	/*
+	 * Crash and console log kept in RAM across a warm reset (read back from /sys/fs/pstore).
+	 * 256 MiB in sits clear of where U-Boot loads the kernel, device tree and initramfs
+	 * (0x00280000 to about 0x0b000000) and of U-Boot's own copy at the top of RAM.
+	 */
+	reserved-memory {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		ramoops@10000000 {
+			compatible = "ramoops";
+			reg = <0x0 0x10000000 0x0 0x100000>;
+			console-size = <0x80000>;
+			record-size = <0x10000>;
+		};
+	};
+
 	vibrator: pwm-vibrator {
 		compatible = "pwm-vibrator";
 		pwm-names = "enable";
