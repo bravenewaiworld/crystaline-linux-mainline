@@ -30,12 +30,16 @@
 	};
 
 	/*
-	 * The left stick's vertical axis reads higher towards the bottom; the input convention (and
+	 * Both sticks' vertical axes had up and down swapped (checked by hand); the input convention (and
 	 * games) want up to be negative.
 	 */
 	adc-joystick {
 		axis@2 {
 			abs-range = <800 250>;
+		};
+
+		axis@3 {
+			abs-range = <250 800>;
 		};
 	};
 
