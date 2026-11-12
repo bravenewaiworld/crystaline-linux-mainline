@@ -27,7 +27,7 @@ static struct rockchip_pll_rate_table rk3568_pll_rates[] = {
 	/* _mhz, _refdiv, _fbdiv, _postdiv1, _postdiv2, _dsmpd, _frac */
 	/*
 	 * Entries marked "MHz / n" are for VPLL, which feeds the display: dclk_vop1 divides one of them
-	 * by n to a mode of the Powkiddy RGB20 Pro's panel, exactly or within 9 ppm below it. Integer
+	 * by n to a mode of the Powkiddy RGB20 Pro's panel, exactly or within 12 ppm below it. Integer
 	 * mode only: this PLL's fraction register reads back 0 when written.
 	 */
 	RK3036_PLL_RATE(2208000000, 1, 92, 1, 1, 1, 0),
@@ -65,23 +65,23 @@ static struct rockchip_pll_rate_table rk3568_pll_rates[] = {
 	RK3036_PLL_RATE(1147555555, 9, 1291, 3, 1, 1, 0),	/* 52.162 MHz / 22 */
 	RK3036_PLL_RATE(1104000000, 1, 92, 2, 1, 1, 0),
 	RK3036_PLL_RATE(1100000000, 3, 275, 2, 1, 1, 0),
-	RK3036_PLL_RATE(1092000000, 1, 91, 2, 1, 1, 0),	/* 54.600 MHz / 20 */
 	RK3036_PLL_RATE(1008000000, 1, 84, 2, 1, 1, 0),
 	RK3036_PLL_RATE(1000000000, 3, 250, 2, 1, 1, 0),
 	RK3036_PLL_RATE(980842105, 19, 1553, 2, 1, 1, 0),	/* 65.390 MHz / 15 */
 	RK3036_PLL_RATE(912000000, 1, 76, 2, 1, 1, 0),
+	RK3036_PLL_RATE(869625000, 16, 2319, 2, 2, 1, 0),	/* 51.155 MHz / 17 */
+	RK3036_PLL_RATE(868444444, 9, 977, 3, 1, 1, 0),	/* 51.085 MHz / 17 */
 	RK3036_PLL_RATE(816000000, 1, 68, 2, 1, 1, 0),
 	RK3036_PLL_RATE(800000000, 3, 200, 2, 1, 1, 0),
 	RK3036_PLL_RATE(724000000, 3, 181, 2, 1, 1, 0),
+	RK3036_PLL_RATE(714428571, 14, 1667, 2, 2, 1, 0),	/* 51.031 MHz / 14 */
 	RK3036_PLL_RATE(700000000, 3, 350, 4, 1, 1, 0),
 	RK3036_PLL_RATE(696000000, 1, 116, 4, 1, 1, 0),
-	RK3036_PLL_RATE(692250000, 8, 923, 2, 2, 1, 0),	/* 62.932 MHz / 11 */
 	RK3036_PLL_RATE(600000000, 1, 100, 4, 1, 1, 0),
 	RK3036_PLL_RATE(594000000, 1, 99, 4, 1, 1, 0),
 	RK3036_PLL_RATE(513600000, 1, 107, 5, 1, 1, 0),	/* 102.720 MHz / 5 */
 	RK3036_PLL_RATE(513120000, 10, 1069, 5, 1, 1, 0),	/* 51.312 MHz / 10 */
 	RK3036_PLL_RATE(500000000, 1, 125, 6, 1, 1, 0),
-	RK3036_PLL_RATE(418890756, 17, 2077, 7, 1, 1, 0),	/* 59.842 MHz / 7 */
 	RK3036_PLL_RATE(408000000, 1, 68, 2, 2, 1, 0),
 	RK3036_PLL_RATE(385200000, 4, 321, 5, 1, 1, 0),	/* 77.040 MHz / 5 */
 	RK3036_PLL_RATE(358062111, 23, 2402, 7, 1, 1, 0),	/* 51.152 MHz / 7 */

@@ -57,6 +57,13 @@
 	assigned-clock-rates = <32768>, <1200000000>, <200000000>;
 };
 
+/*
+ * The panel's DSI link shows a clean picture only near a 51 MHz pixel clock: at 54.6 MHz its colours
+ * shift, from about 59.8 MHz it fades into vertical bands. So 59.73 Hz (GBA), 59.94 Hz and 60.10 Hz
+ * (NTSC consoles) run at 51.03, 51.09 and 51.16 MHz with longer or shorter blanking, as the 50 Hz
+ * and 57.5 Hz modes do; ROCKNIX's versions of those three ran at 62.93, 59.84 and 54.6 MHz. The
+ * 75.47, 90 and 120 Hz modes need faster clocks and don't show a clean picture.
+ */
 &dsi0 {
         panel: panel@0 {
 		compatible = "rocknix,generic-dsi";
@@ -68,10 +75,10 @@
 			"M clock=51072 horizontal=1024,20,56,20 vertical=768,15,118,11",
 			"M clock=52162 horizontal=1024,20,54,20 vertical=768,15,139,11",
 			"M clock=51152 horizontal=1024,20,48,20 vertical=768,15,6,11",
-			"M clock=62932 horizontal=1024,20,29,20 vertical=768,15,170,11",
-			"M clock=59842 horizontal=1024,20,20,20 vertical=768,15,127,11",
+			"M clock=51031 horizontal=1024,20,4,20 vertical=768,18,3,11",
+			"M clock=51085 horizontal=1024,20,4,20 vertical=768,16,3,11",
 			"M clock=51312 horizontal=1024,20,5,20 vertical=768,15,6,11",
-			"M clock=54600 horizontal=1024,20,48,20 vertical=768,15,23,11",
+			"M clock=51155 horizontal=1024,20,4,20 vertical=768,15,3,11",
 			"M clock=65390 horizontal=1024,20,15,20 vertical=768,15,9,11",
 			"M clock=77040 horizontal=1024,20,6,20 vertical=768,15,6,11",
 			"M clock=102720 horizontal=1024,20,6,20 vertical=768,15,6,11",
