@@ -555,6 +555,16 @@ static void dw_mipi_dsi_phy_power_off(void *priv_data)
 	phy_power_off(dsi->phy);
 }
 
+/*
+ * Rockchip's own kernel sets a lane rate of 10/9 of the pixel data's (mainline: 10/8), and gives the
+ * DSI host the rate the external PHY's PLL really runs at (mainline: the rate asked for). Off by
+ * default; for comparing the two on panels that lose the picture at higher pixel clocks. Takes effect
+ * at the next mode set.
+ */
+static bool bsp_lane_rate;
+module_param(bsp_lane_rate, bool, 0644);
+MODULE_PARM_DESC(bsp_lane_rate, "DSI lane rate as Rockchip's kernel sets it (10/9, the PHY's real rate)");
+
 static int
 dw_mipi_dsi_get_lane_mbps(void *priv_data, const struct drm_display_mode *mode,
 			  unsigned long mode_flags, u32 lanes, u32 format,
@@ -593,12 +603,26 @@ dw_mipi_dsi_get_lane_mbps(void *priv_data, const struct drm_display_mode *mode,
 	}
 
 	/* for external phy only a the mipi_dphy_config is necessary */
+	if (dsi->phy && bsp_lane_rate) {
+		unsigned long pclk = DIV_ROUND_CLOSEST_ULL((u64)mpclk * (bpp / lanes) * 10 / 9 * lanes, bpp);
+
+		phy_mipi_dphy_get_default_config(pclk * USEC_PER_SEC, bpp, lanes,
+						 &dsi->phy_opts.mipi_dphy);
+		phy_set_mode(dsi->phy, PHY_MODE_MIPI_DPHY);
+		phy_configure(dsi->phy, &dsi->phy_opts);
+		dsi->lane_mbps = DIV_ROUND_UP(dsi->phy_opts.mipi_dphy.hs_clk_rate, USEC_PER_SEC);
+		*lane_mbps = dsi->lane_mbps;
+		dev_info(dsi->dev, "lane rate %u Mbps (Rockchip's way) for %d kHz\n", dsi->lane_mbps, mode->clock);
+
+		return 0;
+	}
 	if (dsi->phy) {
 		phy_mipi_dphy_get_default_config(mode->clock * 1000 * 10 / 8,
 						 bpp, lanes,
 						 &dsi->phy_opts.mipi_dphy);
 		dsi->lane_mbps = target_mbps;
 		*lane_mbps = dsi->lane_mbps;
+		dev_info(dsi->dev, "lane rate %u Mbps for %d kHz\n", dsi->lane_mbps, mode->clock);
 
 		return 0;
 	}
