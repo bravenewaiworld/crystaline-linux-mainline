@@ -352,6 +352,37 @@ static inline struct generic_panel *panel_to_generic_panel(struct drm_panel *pan
     return container_of(panel, struct generic_panel, panel);
 }
 
+/*
+ * Replaces commands of the init sequence, for testing: comma-separated hex, each replacing the first
+ * command with the same first byte and length (e.g. "bb02240761194444"). Takes effect when the panel
+ * is next prepared (a mode set).
+ */
+static char init_patch[256];
+module_param_string(init_patch, init_patch, sizeof(init_patch), 0644);
+MODULE_PARM_DESC(init_patch, "Init sequence commands to replace, as comma-separated hex");
+
+/* The bytes of `iseq` with a matching command from init_patch written over them, if there is one. */
+static void generic_panel_patch(struct device *dev, struct generic_panel_init_seq *iseq, u8 *out)
+{
+    const char *p = init_patch;
+
+    memcpy(out, iseq->data, iseq->len);
+    if (iseq->dcs != DCS_PSEUDO_CMD_SEQ || iseq->len < 1)
+        return;
+    while (*p) {
+        size_t n = strcspn(p, ",\n");
+        u8 cmd[64];
+
+        if (n % 2 == 0 && n / 2 == iseq->len && n / 2 <= sizeof(cmd) && !hex2bin(cmd, p, n / 2) && cmd[0] == iseq->data[0]) {
+            memcpy(out, cmd, n / 2);
+            dev_info(dev, "init: %*phN replaced by %*phN\n", iseq->len, iseq->data, iseq->len, out);
+            return;
+        }
+        p += n;
+        if (*p) p++;
+    }
+}
+
 static int generic_panel_init_sequence(struct generic_panel *ctx)
 {
     struct mipi_dsi_device *dsi = to_mipi_dsi_device(ctx->dev);
@@ -372,7 +403,14 @@ static int generic_panel_init_sequence(struct generic_panel *ctx)
                 }
             }
         } else if (iseq->dcs == DCS_PSEUDO_CMD_SEQ) {
-            ret = mipi_dsi_dcs_write_buffer(dsi, iseq->data, iseq->len);
+            u8 buf[64];
+
+            if (iseq->len <= sizeof(buf) && init_patch[0]) {
+                generic_panel_patch(dev, iseq, buf);
+                ret = mipi_dsi_dcs_write_buffer(dsi, buf, iseq->len);
+            } else {
+                ret = mipi_dsi_dcs_write_buffer(dsi, iseq->data, iseq->len);
+            }
             dev_dbg(dev, "iseq 0x%px len=%d -> %d\n", (void*)iseq, iseq->len, ret);
         } else {
             ret = mipi_dsi_dcs_write(dsi, iseq->dcs, iseq->data, iseq->len);
