@@ -29,6 +29,16 @@
 		};
 	};
 
+	/*
+	 * The left stick's vertical axis reads higher towards the bottom; the input convention (and
+	 * games) want up to be negative.
+	 */
+	adc-joystick {
+		axis@2 {
+			abs-range = <800 250>;
+		};
+	};
+
 	vibrator: pwm-vibrator {
 		compatible = "pwm-vibrator";
 		pwm-names = "enable";
