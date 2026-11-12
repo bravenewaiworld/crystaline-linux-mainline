@@ -25,6 +25,11 @@ enum rk3568_plls {
 
 static struct rockchip_pll_rate_table rk3568_pll_rates[] = {
 	/* _mhz, _refdiv, _fbdiv, _postdiv1, _postdiv2, _dsmpd, _frac */
+	/*
+	 * Entries marked "MHz / n" are for VPLL, which feeds the display: dclk_vop1 divides one of them
+	 * by n to a mode of the Powkiddy RGB20 Pro's panel, exactly or within 9 ppm below it. Integer
+	 * mode only: this PLL's fraction register reads back 0 when written.
+	 */
 	RK3036_PLL_RATE(2208000000, 1, 92, 1, 1, 1, 0),
 	RK3036_PLL_RATE(2184000000, 1, 91, 1, 1, 1, 0),
 	RK3036_PLL_RATE(2160000000, 1, 90, 1, 1, 1, 0),
@@ -57,23 +62,33 @@ static struct rockchip_pll_rate_table rk3568_pll_rates[] = {
 	RK3036_PLL_RATE(1248000000, 1, 104, 2, 1, 1, 0),
 	RK3036_PLL_RATE(1200000000, 1, 100, 2, 1, 1, 0),
 	RK3036_PLL_RATE(1188000000, 1, 99, 2, 1, 1, 0),
+	RK3036_PLL_RATE(1147555555, 9, 1291, 3, 1, 1, 0),	/* 52.162 MHz / 22 */
 	RK3036_PLL_RATE(1104000000, 1, 92, 2, 1, 1, 0),
 	RK3036_PLL_RATE(1100000000, 3, 275, 2, 1, 1, 0),
+	RK3036_PLL_RATE(1092000000, 1, 91, 2, 1, 1, 0),	/* 54.600 MHz / 20 */
 	RK3036_PLL_RATE(1008000000, 1, 84, 2, 1, 1, 0),
 	RK3036_PLL_RATE(1000000000, 3, 250, 2, 1, 1, 0),
+	RK3036_PLL_RATE(980842105, 19, 1553, 2, 1, 1, 0),	/* 65.390 MHz / 15 */
 	RK3036_PLL_RATE(912000000, 1, 76, 2, 1, 1, 0),
 	RK3036_PLL_RATE(816000000, 1, 68, 2, 1, 1, 0),
 	RK3036_PLL_RATE(800000000, 3, 200, 2, 1, 1, 0),
 	RK3036_PLL_RATE(724000000, 3, 181, 2, 1, 1, 0),
 	RK3036_PLL_RATE(700000000, 3, 350, 4, 1, 1, 0),
 	RK3036_PLL_RATE(696000000, 1, 116, 4, 1, 1, 0),
+	RK3036_PLL_RATE(692250000, 8, 923, 2, 2, 1, 0),	/* 62.932 MHz / 11 */
 	RK3036_PLL_RATE(600000000, 1, 100, 4, 1, 1, 0),
 	RK3036_PLL_RATE(594000000, 1, 99, 4, 1, 1, 0),
+	RK3036_PLL_RATE(513600000, 1, 107, 5, 1, 1, 0),	/* 102.720 MHz / 5 */
+	RK3036_PLL_RATE(513120000, 10, 1069, 5, 1, 1, 0),	/* 51.312 MHz / 10 */
 	RK3036_PLL_RATE(500000000, 1, 125, 6, 1, 1, 0),
+	RK3036_PLL_RATE(418890756, 17, 2077, 7, 1, 1, 0),	/* 59.842 MHz / 7 */
 	RK3036_PLL_RATE(408000000, 1, 68, 2, 2, 1, 0),
+	RK3036_PLL_RATE(385200000, 4, 321, 5, 1, 1, 0),	/* 77.040 MHz / 5 */
+	RK3036_PLL_RATE(358062111, 23, 2402, 7, 1, 1, 0),	/* 51.152 MHz / 7 */
 	RK3036_PLL_RATE(312000000, 1, 78, 6, 1, 1, 0),
 	RK3036_PLL_RATE(297000000, 2, 99, 4, 1, 1, 0),
 	RK3036_PLL_RATE(292500000, 1, 195, 4, 4, 1, 0),
+	RK3036_PLL_RATE(255360000, 5, 266, 5, 1, 1, 0),	/* 51.072 MHz / 5 */
 	RK3036_PLL_RATE(241500000, 2, 161, 4, 2, 1, 0),
 	RK3036_PLL_RATE(216000000, 1, 72, 4, 2, 1, 0),
 	RK3036_PLL_RATE(200000000, 1, 100, 3, 4, 1, 0),
@@ -1065,7 +1080,7 @@ static struct rockchip_clk_branch rk3568_clk_branches[] __initdata = {
 	COMPOSITE(DCLK_VOP0, "dclk_vop0", hpll_vpll_gpll_cpll_p, CLK_SET_RATE_NO_REPARENT,
 			RK3568_CLKSEL_CON(39), 10, 2, MFLAGS, 0, 8, DFLAGS,
 			RK3568_CLKGATE_CON(20), 10, GFLAGS),
-	COMPOSITE(DCLK_VOP1, "dclk_vop1", hpll_vpll_gpll_cpll_p, CLK_SET_RATE_NO_REPARENT,
+	COMPOSITE(DCLK_VOP1, "dclk_vop1", hpll_vpll_gpll_cpll_p, CLK_SET_RATE_NO_REPARENT | CLK_SET_RATE_PARENT,
 			RK3568_CLKSEL_CON(40), 10, 2, MFLAGS, 0, 8, DFLAGS,
 			RK3568_CLKGATE_CON(20), 11, GFLAGS),
 	COMPOSITE(DCLK_VOP2, "dclk_vop2", hpll_vpll_gpll_cpll_p, CLK_SET_RATE_NO_REPARENT,
