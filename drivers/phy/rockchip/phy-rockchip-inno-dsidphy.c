@@ -738,6 +738,10 @@ static int inno_dsidphy_configure(struct phy *phy,
 
 	memcpy(&inno->dphy_cfg, &opts->mipi_dphy, sizeof(inno->dphy_cfg));
 
+	/* Tell the caller the rate the PLL will really run at, as Rockchip's kernel does. */
+	inno_dsidphy_pll_calc_rate(inno, inno->dphy_cfg.hs_clk_rate);
+	opts->mipi_dphy.hs_clk_rate = inno->pll.rate;
+
 	return 0;
 }
 
