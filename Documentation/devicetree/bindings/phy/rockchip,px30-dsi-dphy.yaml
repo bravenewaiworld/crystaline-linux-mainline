@@ -47,6 +47,14 @@ properties:
     items:
       - const: apb
 
+  rockchip,timing-min-mbps:
+    description: |
+      For a panel that needs longer D-PHY timings (HS prepare, HS zero, HS trail) than its lane
+      rate's: the lane rate in Mbps whose timings the PHY uses whenever the real rate is lower.
+      Without it, the PHY uses its real lane rate's.
+    $ref: /schemas/types.yaml#/definitions/uint32
+    maximum: 2500
+
 required:
   - "#phy-cells"
   - compatible
