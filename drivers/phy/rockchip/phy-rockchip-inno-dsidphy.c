@@ -236,6 +236,8 @@ struct inno_dsidphy {
 	enum phy_mode mode;
 	struct phy_configure_opts_mipi_dphy dphy_cfg;
 
+	/* rockchip,timing-min-mbps: timings no shorter than this lane rate's (0: none). */
+	u32 timing_min_mbps;
 	struct clk *pll_clk;
 	struct {
 		struct clk_hw hw;
@@ -333,6 +335,15 @@ static void phy_update_bits(struct inno_dsidphy *inno,
 	writel(tmp, inno->phy_base + reg);
 }
 
+/*
+ * Picks the D-PHY timing counts (hs-prepare, hs-zero, hs-trail) for this lane rate in Mbps instead
+ * of the real one (0: the real one), for testing panels that lose the picture at higher lane rates.
+ * Takes effect when the PHY is next powered on (a mode set).
+ */
+static unsigned int timing_mbps;
+module_param(timing_mbps, uint, 0644);
+MODULE_PARM_DESC(timing_mbps, "Use the D-PHY timings of this lane rate (Mbps; 0: the real rate's)");
+
 static unsigned long inno_dsidphy_pll_calc_rate(struct inno_dsidphy *inno,
 						unsigned long rate)
 {
@@ -405,6 +416,7 @@ static unsigned long inno_dsidphy_pll_calc_rate(struct inno_dsidphy *inno,
 
 static void inno_dsidphy_mipi_mode_enable(struct inno_dsidphy *inno)
 {
+	unsigned long rate;
 	struct phy_configure_opts_mipi_dphy *cfg = &inno->dphy_cfg;
 	const struct inno_mipi_dphy_timing *timings;
 	u32 t_txbyteclkhs, t_txclkesc;
@@ -511,9 +523,13 @@ static void inno_dsidphy_mipi_mode_enable(struct inno_dsidphy *inno)
 	 */
 	ta_wait = DIV_ROUND_UP(cfg->ta_get, t_txclkesc);
 
+	rate = timing_mbps ? timing_mbps * 1000000UL : max_t(unsigned long, inno->pll.rate, inno->timing_min_mbps * 1000000UL);
 	for (i = 0; i < inno->pdata->num_timings; i++)
-		if (inno->pll.rate <= timings[i].rate)
+		if (rate <= timings[i].rate)
 			break;
+	dev_dbg(inno->dev, "lane rate %lu Mbps, timing row %u (%lu Mbps)%s\n", inno->pll.rate / 1000000, i,
+		 timings[min(i, inno->pdata->num_timings - 1)].rate / 1000000,
+		 timing_mbps ? ", forced" : rate > inno->pll.rate ? ", the board's minimum" : "");
 
 	if (i == inno->pdata->num_timings)
 		--i;
@@ -738,6 +754,10 @@ static int inno_dsidphy_configure(struct phy *phy,
 
 	memcpy(&inno->dphy_cfg, &opts->mipi_dphy, sizeof(inno->dphy_cfg));
 
+	/* Tell the caller the rate the PLL will really run at, as Rockchip's kernel does. */
+	inno_dsidphy_pll_calc_rate(inno, inno->dphy_cfg.hs_clk_rate);
+	opts->mipi_dphy.hs_clk_rate = inno->pll.rate;
+
 	return 0;
 }
 
@@ -784,6 +804,7 @@ static int inno_dsidphy_probe(struct platform_device *pdev)
 
 	inno->dev = dev;
 	inno->pdata = of_device_get_match_data(inno->dev);
+	of_property_read_u32(dev->of_node, "rockchip,timing-min-mbps", &inno->timing_min_mbps);
 	platform_set_drvdata(pdev, inno);
 
 	inno->phy_base = devm_platform_ioremap_resource(pdev, 0);

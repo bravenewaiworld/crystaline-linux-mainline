@@ -314,6 +314,15 @@ static inline u32 dsi_read(struct dw_mipi_dsi *dsi, u32 reg)
 	return readl(dsi->base + reg);
 }
 
+/*
+ * Keeps the clock lane in high speed even for a panel that asks for a gated clock
+ * (MIPI_DSI_CLOCK_NON_CONTINUOUS), for testing panels that lose the picture at higher lane rates.
+ * Takes effect at the next mode set.
+ */
+static bool continuous_clock;
+module_param(continuous_clock, bool, 0644);
+MODULE_PARM_DESC(continuous_clock, "Keep the DSI clock lane in high speed, whatever the panel asks for");
+
 static int dw_mipi_dsi_host_attach(struct mipi_dsi_host *host,
 				   struct mipi_dsi_device *device)
 {
@@ -644,7 +653,7 @@ static void dw_mipi_dsi_set_mode(struct dw_mipi_dsi *dsi,
 	}
 
 	val = PHY_TXREQUESTCLKHS;
-	if (dsi->mode_flags & MIPI_DSI_CLOCK_NON_CONTINUOUS)
+	if ((dsi->mode_flags & MIPI_DSI_CLOCK_NON_CONTINUOUS) && !continuous_clock)
 		val |= AUTO_CLKLANE_CTRL;
 	dsi_write(dsi, DSI_LPCLK_CTRL, val);
 
