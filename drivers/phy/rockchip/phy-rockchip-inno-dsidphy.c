@@ -333,6 +333,15 @@ static void phy_update_bits(struct inno_dsidphy *inno,
 	writel(tmp, inno->phy_base + reg);
 }
 
+/*
+ * Picks the D-PHY timing counts (hs-prepare, hs-zero, hs-trail) for this lane rate in Mbps instead
+ * of the real one (0: the real one), for testing panels that lose the picture at higher lane rates.
+ * Takes effect when the PHY is next powered on (a mode set).
+ */
+static unsigned int timing_mbps;
+module_param(timing_mbps, uint, 0644);
+MODULE_PARM_DESC(timing_mbps, "Use the D-PHY timings of this lane rate (Mbps; 0: the real rate's)");
+
 static unsigned long inno_dsidphy_pll_calc_rate(struct inno_dsidphy *inno,
 						unsigned long rate)
 {
@@ -512,8 +521,10 @@ static void inno_dsidphy_mipi_mode_enable(struct inno_dsidphy *inno)
 	ta_wait = DIV_ROUND_UP(cfg->ta_get, t_txclkesc);
 
 	for (i = 0; i < inno->pdata->num_timings; i++)
-		if (inno->pll.rate <= timings[i].rate)
+		if ((timing_mbps ? timing_mbps * 1000000UL : inno->pll.rate) <= timings[i].rate)
 			break;
+	dev_info(inno->dev, "lane rate %lu Mbps, timing row %u (%lu Mbps)%s\n", inno->pll.rate / 1000000, i,
+		 timings[min(i, inno->pdata->num_timings - 1)].rate / 1000000, timing_mbps ? ", forced" : "");
 
 	if (i == inno->pdata->num_timings)
 		--i;
