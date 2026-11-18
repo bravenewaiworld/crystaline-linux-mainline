@@ -605,11 +605,17 @@ dw_mipi_dsi_get_lane_mbps(void *priv_data, const struct drm_display_mode *mode,
 	/* for external phy only a the mipi_dphy_config is necessary */
 	if (dsi->phy && bsp_lane_rate) {
 		unsigned long pclk = DIV_ROUND_CLOSEST_ULL((u64)mpclk * (bpp / lanes) * 10 / 9 * lanes, bpp);
+		int ret;
 
 		phy_mipi_dphy_get_default_config(pclk * USEC_PER_SEC, bpp, lanes,
 						 &dsi->phy_opts.mipi_dphy);
-		phy_set_mode(dsi->phy, PHY_MODE_MIPI_DPHY);
-		phy_configure(dsi->phy, &dsi->phy_opts);
+		ret = phy_set_mode(dsi->phy, PHY_MODE_MIPI_DPHY);
+		if (!ret)
+			ret = phy_configure(dsi->phy, &dsi->phy_opts);
+		if (ret) {
+			dev_err(dsi->dev, "Rockchip's lane rate for %d kHz: PHY refused it: %d\n", mode->clock, ret);
+			return ret;
+		}
 		dsi->lane_mbps = DIV_ROUND_UP(dsi->phy_opts.mipi_dphy.hs_clk_rate, USEC_PER_SEC);
 		*lane_mbps = dsi->lane_mbps;
 		dev_info(dsi->dev, "lane rate %u Mbps (Rockchip's way) for %d kHz\n", dsi->lane_mbps, mode->clock);
@@ -622,7 +628,7 @@ dw_mipi_dsi_get_lane_mbps(void *priv_data, const struct drm_display_mode *mode,
 						 &dsi->phy_opts.mipi_dphy);
 		dsi->lane_mbps = target_mbps;
 		*lane_mbps = dsi->lane_mbps;
-		dev_info(dsi->dev, "lane rate %u Mbps for %d kHz\n", dsi->lane_mbps, mode->clock);
+		dev_dbg(dsi->dev, "lane rate %u Mbps for %d kHz\n", dsi->lane_mbps, mode->clock);
 
 		return 0;
 	}

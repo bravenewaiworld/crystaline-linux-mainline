@@ -527,7 +527,7 @@ static void inno_dsidphy_mipi_mode_enable(struct inno_dsidphy *inno)
 	for (i = 0; i < inno->pdata->num_timings; i++)
 		if (rate <= timings[i].rate)
 			break;
-	dev_info(inno->dev, "lane rate %lu Mbps, timing row %u (%lu Mbps)%s\n", inno->pll.rate / 1000000, i,
+	dev_dbg(inno->dev, "lane rate %lu Mbps, timing row %u (%lu Mbps)%s\n", inno->pll.rate / 1000000, i,
 		 timings[min(i, inno->pdata->num_timings - 1)].rate / 1000000,
 		 timing_mbps ? ", forced" : rate > inno->pll.rate ? ", the board's minimum" : "");
 
